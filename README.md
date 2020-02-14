@@ -119,9 +119,10 @@ This editor is useful for:
 
 ```jsx
 <content.Object
-  id="meta",
+  id="meta"
   keys="title,description" // Required; will define with items can be edited
-  type="span",             // Defaults to `div`
+  type="span"              // Defaults to `div`
+  // detect                // optional detect prop, defaults to false, when used the children wurd ids are added to `keys` automatically
   // Other standard props (className, style etc.) can be passed too
 />
 ```

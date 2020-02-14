@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import wurd from 'wurd-web';
+import { WurdContext } from './object';
 
 
-const WurdMarkdown = ({block, id, sid, type = 'div', vars, ...rest}) => {
+export default function WurdMarkdown({ block, id, sid, type = 'div', vars, ...rest }) {
+  const keysRegister = useContext(WurdContext);
+
+  useEffect(() => {
+    if (!keysRegister) return undefined;
+
+    keysRegister.add(id);
+
+    return () => keysRegister.delete(id);
+  }, [id]);
 
   block = block || wurd.content;
 
@@ -13,13 +23,9 @@ const WurdMarkdown = ({block, id, sid, type = 'div', vars, ...rest}) => {
     dangerouslySetInnerHTML: { __html: text }
   };
 
-  if (wurd.editMode) {
+  if (wurd.editMode && !keysRegister) { // don't add inline edit if there's a parent WurdObject in detect mode
     elProps['data-wurd-md'] = block.id(sid || id);
   }
 
   return React.createElement(type, elProps);
-
-};
-
-
-export default WurdMarkdown;
+}

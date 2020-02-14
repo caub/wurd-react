@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import wurd from 'wurd-web';
+import { WurdContext } from './object';
 
 
-const WurdText = ({block, id, sid, type = 'span', vars, ...rest}) => {
+export default function WurdText({ block, id, sid, type = 'span', component: Component = type, vars, ...rest }) {
+  const keysRegister = useContext(WurdContext);
+
+  useEffect(() => {
+    if (!keysRegister) return undefined;
+
+    keysRegister.add(id);
+
+    return () => keysRegister.delete(id);
+  }, [id]);
 
   block = block || wurd.content;
 
@@ -10,15 +20,11 @@ const WurdText = ({block, id, sid, type = 'span', vars, ...rest}) => {
 
   const elProps = { ...rest };
 
-  if (wurd.editMode) {
+  if (wurd.editMode && !keysRegister) { // don't add inline edit if there's a parent WurdObject in detect mode
     const editorType = vars ? 'data-wurd-md' : 'data-wurd';
 
     elProps[editorType] = block.id(sid || id);
   }
 
-  return React.createElement(type, elProps, text);
-
-};
-
-
-export default WurdText;
+  return React.createElement(Component, elProps, text);
+}
