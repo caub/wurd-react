@@ -32,10 +32,10 @@
   "author": "Charlie Davison",
   "license": "ISC",
   "dependencies": {
-    "wurd-web": "^7.2.0"
+    "wurd-web": "github:caub/wurd-web#fix-load-cache"
   },
   "peerDependencies": {
-    "react": "^15.0.0"
+    "react": ">=15"
   },
   "files": [
     "*.md",
