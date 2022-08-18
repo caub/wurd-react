@@ -7,7 +7,6 @@
   function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
   var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
-  var marked__default = /*#__PURE__*/_interopDefaultLegacy(marked);
 
   function ownKeys(object, enumerableOnly) {
     var keys = Object.keys(object);
@@ -33,16 +32,6 @@
     }
 
     return target;
-  }
-
-  function _typeof(obj) {
-    "@babel/helpers - typeof";
-
-    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
-      return typeof obj;
-    } : function (obj) {
-      return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    }, _typeof(obj);
   }
 
   function _classCallCheck(instance, Constructor) {
@@ -121,76 +110,19 @@
     return target;
   }
 
-  var is_object = isObject$1;
-
-  function isObject$1(val) {
-    return !(val == null || _typeof(val) !== 'object' || Array.isArray(val));
-  }
-
-  /*
-  eslint
-  no-multi-spaces: ["error", {exceptions: {"VariableDeclarator": true}}]
-  padded-blocks: ["error", {"classes": "always"}]
-  max-len: ["error", 80]
-  */
-
-  var array_some = some$1;
-
-  function some$1(arr, fn) {
-    var len = arr.length;
-    var i = -1;
-
-    while (++i < len) {
-      if (fn(arr[i], i, arr)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /*
-  eslint
-  no-multi-spaces: ["error", {exceptions: {"VariableDeclarator": true}}]
-  padded-blocks: ["error", {"classes": "always"}]
-  max-len: ["error", 80]
-  */
-
-  var isObject = is_object;
-  var some = array_some;
-  var getPropertyValue_1 = getPropertyValue;
-
-  function getPropertyValue(obj, path) {
-    if (!isObject(obj) || typeof path !== 'string') {
-      return obj;
-    }
-
-    var clone = obj;
-    some(path.split('.'), procPath);
-    return clone;
-
-    function procPath(p) {
-      clone = clone[p];
-
-      if (!clone) {
-        return true;
-      }
-    }
-  }
-
   /**
    * @param {Object} data
    *
    * @return {String}
    */
 
-  var encodeQueryString = function encodeQueryString(data) {
+  function encodeQueryString(data) {
     var parts = Object.keys(data).map(function (key) {
       var value = data[key];
       return encodeURIComponent(key) + '=' + encodeURIComponent(value);
     });
     return parts.join('&');
-  };
+  }
   /**
    * Replaces {{mustache}} style placeholders in text with variables
    *
@@ -201,30 +133,36 @@
    */
 
 
-  var replaceVars = function replaceVars(text) {
+  function replaceVars(text) {
     var vars = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     if (typeof text !== 'string') return text;
-    Object.keys(vars).forEach(function (key) {
-      var val = vars[key];
-      text = text.replace(new RegExp("{{".concat(key, "}}"), 'g'), val);
+    return text.replace(/{{([\w.-]+)}}/g, function (_, key) {
+      return vars[key] || '';
     });
-    return text;
-  };
+  }
 
   var Store = /*#__PURE__*/function () {
     /**
-     * @param {Object} rawContent       Initial content
+     * @param {Object} rawContent            Initial content
+     * @param {String} opts.storageKey       localStorage key
+     * @param {Number} opts.maxAge           cache max-age in ms
      */
     function Store() {
+      var _opts$maxAge;
+
       var rawContent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
       _classCallCheck(this, Store);
 
       this.rawContent = rawContent;
+      this.storageKey = opts.storageKey || 'cmsContent';
+      this.maxAge = (_opts$maxAge = opts.maxAge) !== null && _opts$maxAge !== void 0 ? _opts$maxAge : 3600000;
     }
     /**
-     * @param {String} path
+     * Get a specific piece of content, top-level or nested
      *
+     * @param {String} path e.g. 'section','section.subSection','a.b.c.d'
      * @return {Mixed}
      */
 
@@ -232,16 +170,42 @@
     _createClass(Store, [{
       key: "get",
       value: function get(path) {
-        return getPropertyValue_1(this.rawContent, path);
+        if (!path) return this.rawContent;
+        return path.split('.').reduce(function (acc, k) {
+          return acc && acc[k];
+        }, this.rawContent);
       }
       /**
-       * @param {Object} sections       Top level sections of content
+       * Load content from localStorage
+       *
+       * @return {Object}
        */
 
     }, {
-      key: "setSections",
-      value: function setSections(sections) {
-        Object.assign(this.rawContent, sections);
+      key: "load",
+      value: function load() {
+        try {
+          var cachedContent = JSON.parse(localStorage.getItem(this.storageKey));
+          if (!cachedContent || !cachedContent._expiry || cachedContent._expiry < Date.now()) return this.rawContent;
+          return _objectSpread2(_objectSpread2({}, cachedContent), this.rawContent);
+        } catch (err) {
+          console.error('Wurd: error loading cache:', err);
+          return this.rawContent;
+        }
+      }
+      /**
+       * Save content in cache
+       *
+       * @param {Object} content
+       */
+
+    }, {
+      key: "set",
+      value: function set(content) {
+        Object.assign(this.rawContent, content);
+        localStorage.setItem(this.storageKey, JSON.stringify(_objectSpread2(_objectSpread2({}, this.rawContent), {}, {
+          _expiry: Date.now() + this.maxAge
+        })));
       }
     }]);
 
@@ -347,14 +311,21 @@
        *
        * @param {String} path       Item path e.g. `section.item`
        * @param {Object} [vars]     Variables to replace in the text
+       * @param {Boolean} [opts.inline]
        *
        * @return {Mixed}
        */
 
     }, {
       key: "markdown",
-      value: function markdown(path, vars) {
-        return marked__default["default"](this.text(path, vars));
+      value: function markdown(path, vars, opts) {
+        var text = this.text(path, vars);
+
+        if (opts !== null && opts !== void 0 && opts.inline && marked.marked.parseInline) {
+          return marked.marked.parseInline(text);
+        }
+
+        return marked.marked.parse(text);
       }
       /**
        * Iterates over a collection / list object with the given callback.
@@ -463,16 +434,20 @@
     return Block;
   }();
 
-  var WIDGET_URL = 'https://edit-v3.wurd.io/widget.js';
-  var API_URL = 'https://api-v3.wurd.io';
+  var WIDGET_URL = 'https://widget.wurd.io/widget.js';
+  var API_URL = 'https://api.wurd.io';
 
   var Wurd = /*#__PURE__*/function () {
+    /**
+     * @param {String} appName
+     * @param {String} [options.storageKey='cmsContent']         localStorage key for caching content
+     */
     function Wurd(appName, options) {
       var _this3 = this;
 
       _classCallCheck(this, Wurd);
 
-      this.store = new Store();
+      this.store = new Store(options && options.storageKey);
       this.content = new Block(this, null); // Add block shortcut methods to the main Wurd instance
 
       var methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this.content));
@@ -524,7 +499,7 @@
         }
 
         if (options.rawContent) {
-          this.store.setSections(options.rawContent);
+          this.store.set(options.rawContent);
         }
 
         if (options.blockHelpers) {
@@ -534,58 +509,79 @@
         return this;
       }
       /**
-       * Loads a section of content so that it's items are ready to be accessed with #get(id)
+       * Loads sections of content so that items are ready to be accessed with #get(id)
        *
-       * @param {String} path     Section path e.g. `section`
+       * @param {String|Array<String>} sectionNames     Top-level sections to load e.g. `main,home`
        */
 
     }, {
       key: "load",
-      value: function load(path) {
+      value: function load(sectionNames) {
         var _this5 = this;
 
         var app = this.app,
             store = this.store,
+            editMode = this.editMode,
             debug = this.debug;
-        return new Promise(function (resolve, reject) {
-          if (!app) {
-            return reject(new Error('Use wurd.connect(appName) before wurd.load()'));
-          } // Return cached version if available
+
+        if (!app) {
+          return Promise.reject(new Error('Use wurd.connect(appName) before wurd.load()'));
+        } // Normalise string sectionNames to array
 
 
-          var sectionContent = store.get(path);
+        var sections = typeof sectionNames === 'string' ? sectionNames.split(',') : sectionNames; // Check for cached sections
 
-          if (sectionContent) {
-            debug && console.info('from cache: ', path);
-            return resolve(sectionContent);
-          } // No cached version; fetch from server
+        var cachedContent = store.load();
+        var uncachedSections = sections.filter(function (section) {
+          return cachedContent[section] === undefined;
+        });
+        if (debug) console.info('Wurd: from cache:', sections.filter(function (section) {
+          return cachedContent[section] !== undefined;
+        })); // Return now if all content was in cache
 
-
-          debug && console.info('from server: ', path); // Build request URL
-
-          var params = ['draft', 'lang'].reduce(function (memo, param) {
-            if (_this5[param]) memo[param] = _this5[param];
-            return memo;
-          }, {});
-          var url = "".concat(API_URL, "/apps/").concat(app, "/content/").concat(path, "?").concat(encodeQueryString(params));
-          return fetch(url).then(function (res) {
-            return res.json();
-          }).then(function (result) {
-            if (result.error) {
-              if (result.error.message) {
-                throw new Error(result.error.message);
-              } else {
-                throw new Error("Error loading ".concat(path));
-              }
-            } // Cache for next time
-            // TODO: Does this cause problems if future load() calls use nested paths e.g. main.subsection
+        if (!editMode && uncachedSections.length === 0) {
+          return Promise.resolve(this.content);
+        } // Some sections not in cache; fetch them from server
 
 
-            store.setSections(result);
-            resolve(_this5.content);
-          })["catch"](function (err) {
-            return reject(err);
-          });
+        if (debug) console.info('Wurd: from server:', uncachedSections);
+        return this._fetchSections(uncachedSections).then(function (fetchedContent) {
+          // Cache for next time
+          store.set(fetchedContent); // Return the main Block instance for using content
+
+          return _this5.content;
+        });
+      }
+    }, {
+      key: "_fetchSections",
+      value: function _fetchSections(sectionNames) {
+        var _this6 = this;
+
+        var app = this.app; // Build request URL
+
+        var params = ['draft', 'lang'].reduce(function (memo, param) {
+          if (_this6[param]) memo[param] = _this6[param];
+          return memo;
+        }, {});
+        var url = "".concat(API_URL, "/apps/").concat(app, "/content/").concat(sectionNames, "?").concat(encodeQueryString(params));
+        return this._fetch(url).then(function (result) {
+          if (result.error) {
+            if (result.error.message) {
+              throw new Error(result.error.message);
+            } else {
+              throw new Error("Error loading ".concat(sectionNames));
+            }
+          }
+
+          return result;
+        });
+      }
+    }, {
+      key: "_fetch",
+      value: function _fetch(url) {
+        return fetch(url).then(function (res) {
+          if (!res.ok) throw new Error("Error loading ".concat(url, ": ").concat(res.statusText));
+          return res.json();
         });
       }
     }, {
@@ -605,7 +601,13 @@
           script.setAttribute('data-lang', lang);
         }
 
-        document.getElementsByTagName('body')[0].appendChild(script);
+        var prevScript = document.body.querySelector("script[src=\"".concat(WIDGET_URL, "\"]"));
+
+        if (prevScript) {
+          document.body.removeChild(prevScript);
+        }
+
+        document.body.appendChild(script);
       }
     }, {
       key: "setBlockHelpers",
