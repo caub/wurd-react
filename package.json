@@ -32,7 +32,7 @@
   "author": "Charlie Davison",
   "license": "ISC",
   "dependencies": {
-    "wurd-web": "^8.0.0"
+    "wurd-web": "github:caub/wurd-web#fix-cache"
   },
   "files": [
     "*.md",
