@@ -8,14 +8,92 @@
 
   var React__default = /*#__PURE__*/_interopDefaultLegacy(React);
 
+  function _classCallCheck(a, n) {
+    if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function");
+  }
+  function _defineProperties(e, r) {
+    for (var t = 0; t < r.length; t++) {
+      var o = r[t];
+      o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o);
+    }
+  }
+  function _createClass(e, r, t) {
+    return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", {
+      writable: !1
+    }), e;
+  }
+  function _defineProperty(e, r, t) {
+    return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+      value: t,
+      enumerable: !0,
+      configurable: !0,
+      writable: !0
+    }) : e[r] = t, e;
+  }
+  function ownKeys(e, r) {
+    var t = Object.keys(e);
+    if (Object.getOwnPropertySymbols) {
+      var o = Object.getOwnPropertySymbols(e);
+      r && (o = o.filter(function (r) {
+        return Object.getOwnPropertyDescriptor(e, r).enumerable;
+      })), t.push.apply(t, o);
+    }
+    return t;
+  }
+  function _objectSpread2(e) {
+    for (var r = 1; r < arguments.length; r++) {
+      var t = null != arguments[r] ? arguments[r] : {};
+      r % 2 ? ownKeys(Object(t), !0).forEach(function (r) {
+        _defineProperty(e, r, t[r]);
+      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
+        Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
+      });
+    }
+    return e;
+  }
+  function _objectWithoutProperties(e, t) {
+    if (null == e) return {};
+    var o,
+      r,
+      i = _objectWithoutPropertiesLoose(e, t);
+    if (Object.getOwnPropertySymbols) {
+      var s = Object.getOwnPropertySymbols(e);
+      for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+    }
+    return i;
+  }
+  function _objectWithoutPropertiesLoose(r, e) {
+    if (null == r) return {};
+    var t = {};
+    for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
+      if (e.includes(n)) continue;
+      t[n] = r[n];
+    }
+    return t;
+  }
+  function _toPrimitive(t, r) {
+    if ("object" != typeof t || !t) return t;
+    var e = t[Symbol.toPrimitive];
+    if (void 0 !== e) {
+      var i = e.call(t, r || "default");
+      if ("object" != typeof i) return i;
+      throw new TypeError("@@toPrimitive must return a primitive value.");
+    }
+    return ("string" === r ? String : Number)(t);
+  }
+  function _toPropertyKey(t) {
+    var i = _toPrimitive(t, "string");
+    return "symbol" == typeof i ? i : i + "";
+  }
+
   /**
    * @param {Object} data
    *
    * @return {String}
    */
   function encodeQueryString(data) {
-    const parts = Object.keys(data).map(key => {
-      const value = data[key];
+    var parts = Object.keys(data).map(function (key) {
+      var value = data[key];
       return encodeURIComponent(key) + '=' + encodeURIComponent(value);
     });
     return parts.join('&');
@@ -29,20 +107,27 @@
    *
    * @return {String}
    */
-  function replaceVars(text, vars = {}) {
+  function replaceVars(text) {
+    var vars = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     if (typeof text !== 'string') return text;
-    return text.replace(/{{([\w.-]+)}}/g, (_, key) => vars[key] || '');
+    return text.replace(/{{([\w.-]+)}}/g, function (_, key) {
+      return vars[key] || '';
+    });
   }
-  class Store {
+  var Store = /*#__PURE__*/function () {
     /**
      * @param {Object} rawContent           Initial content
      * @param {String} opts.storageKey      localStorage key
      * @param {Number} opts.ttl             cache time to live in ms (defaults to 1 hour)
      */
-    constructor(rawContent = {}, opts = {}) {
+    function Store() {
+      var _opts$ttl;
+      var rawContent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      _classCallCheck(this, Store);
       this.rawContent = rawContent;
       this.storageKey = opts.storageKey || 'wurdContent';
-      this.ttl = opts.ttl ?? 3600000;
+      this.ttl = (_opts$ttl = opts.ttl) !== null && _opts$ttl !== void 0 ? _opts$ttl : 3600000;
     }
 
     /**
@@ -51,102 +136,105 @@
      * @param {String} path e.g. 'section','section.subSection','a.b.c.d'
      * @return {Mixed}
      */
-    get(path) {
-      if (!path) return this.rawContent;
-      return path.split('.').reduce((acc, k) => acc && acc[k], this.rawContent);
-    }
-
-    /**
-     * Load top-level sections of content from localStorage
-     *
-     * @param {String[]} sectionNames Names of top-level content sections to load e.g. ['main','nav']
-     *    Unused here but likely to be used in future/other Store implementation
-     * @param {Object} [options]
-     * @param {String} [options.lang] Language
-     * @return {Object} content
-     */
-    load(sectionNames, {
-      lang
-    } = {}) {
-      const {
-        rawContent,
-        storageKey,
-        ttl
-      } = this;
-      try {
-        // Find cached content
-        const cachedContent = JSON.parse(localStorage.getItem(storageKey));
-        const metaData = cachedContent && cachedContent._wurd;
-
-        // Check if it has expired
-        if (!cachedContent || !metaData || metaData.savedAt + ttl < Date.now()) {
-          return rawContent;
-        }
-
-        // Check it's in the correct language
-        if (metaData.lang !== lang) {
-          return rawContent;
-        }
-
-        // Remove metadata
-        delete cachedContent['_wurd'];
-
-        // Add cached content to memory content
-        Object.assign(rawContent, cachedContent);
-        return rawContent;
-      } catch (err) {
-        console.error('Wurd: error loading cache:', err);
-        return rawContent;
+    return _createClass(Store, [{
+      key: "get",
+      value: function get(path) {
+        if (!path) return this.rawContent;
+        return path.split('.').reduce(function (acc, k) {
+          return acc && acc[k];
+        }, this.rawContent);
       }
-    }
 
-    /**
-     * Save top-level sections of content to localStorage
-     *
-     * @param {Object} sections
-     * @param {Boolean} [options.cache] Whether to save the content to cache
-     */
-    save(sections, {
-      lang
-    } = {}) {
-      const {
-        rawContent,
-        storageKey
-      } = this;
-      Object.assign(rawContent, sections);
-      localStorage.setItem(storageKey, JSON.stringify({
-        ...rawContent,
-        _wurd: {
-          savedAt: Date.now(),
-          lang
+      /**
+       * Load top-level sections of content from localStorage
+       *
+       * @param {String[]} sectionNames Names of top-level content sections to load e.g. ['main','nav']
+       *    Unused here but likely to be used in future/other Store implementation
+       * @param {Object} [options]
+       * @param {String} [options.lang] Language
+       * @return {Object} content
+       */
+    }, {
+      key: "load",
+      value: function load(sectionNames) {
+        var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+          lang = _ref.lang;
+        var rawContent = this.rawContent,
+          storageKey = this.storageKey,
+          ttl = this.ttl;
+        try {
+          // Find cached content
+          var cachedContent = JSON.parse(localStorage.getItem(storageKey));
+          var metaData = cachedContent && cachedContent._wurd;
+
+          // Check it's in the correct language
+          if (!cachedContent || !metaData || metaData.lang !== lang) {
+            return rawContent;
+          }
+
+          // Check if it has expired
+          if (metaData.savedAt + ttl < Date.now()) {
+            rawContent._expired = true;
+          }
+
+          // Remove metadata
+          delete cachedContent['_wurd'];
+
+          // Add cached content to memory content
+          Object.assign(rawContent, cachedContent);
+          return rawContent;
+        } catch (err) {
+          console.error('Wurd: error loading cache:', err);
+          return rawContent;
         }
-      }));
-    }
+      }
 
-    /**
-     * Clears the localStorage cache
-     */
-    clear() {
-      localStorage.removeItem(this.storageKey);
-    }
-  }
-  class Block {
-    constructor(wurd, path) {
+      /**
+       * Save top-level sections of content to localStorage
+       *
+       * @param {Object} sections
+       * @param {Boolean} [options.cache] Whether to save the content to cache
+       */
+    }, {
+      key: "save",
+      value: function save(sections) {
+        var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+          lang = _ref2.lang;
+        var rawContent = this.rawContent,
+          storageKey = this.storageKey;
+        Object.assign(rawContent, sections);
+        localStorage.setItem(storageKey, JSON.stringify(_objectSpread2(_objectSpread2({}, rawContent), {}, {
+          _wurd: {
+            savedAt: Date.now(),
+            lang: lang
+          }
+        })));
+      }
+
+      /**
+       * Clears the localStorage cache
+       */
+    }, {
+      key: "clear",
+      value: function clear() {
+        localStorage.removeItem(this.storageKey);
+      }
+    }]);
+  }();
+  var Block = /*#__PURE__*/function () {
+    function Block(wurd, path) {
+      var _this = this;
+      _classCallCheck(this, Block);
       this.wurd = wurd;
       this.path = path;
-
-      // Private shortcut to the main content getter
-      // TODO: Make a proper private variable
-      // See http://voidcanvas.com/es6-private-variables/ - but could require Babel Polyfill to be included
-      this._get = wurd.store.get.bind(wurd.store);
 
       // Bind methods to the instance to enable 'this' to be available
       // to own methods and added helper methods;
       // This also allows object destructuring, for example:
       // `const {text} = wurd.block('home')`
-      const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-      methodNames.forEach(name => {
-        this[name] = this[name].bind(this);
+      var methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+      methodNames.forEach(function (name) {
+        _this[name] = _this[name].bind(_this);
       });
     }
 
@@ -157,184 +245,201 @@
      *
      * @return {String}
      */
-    id(path) {
-      if (!path) return this.path;
-      return this.path ? [this.path, path].join('.') : path;
-    }
+    return _createClass(Block, [{
+      key: "id",
+      value: function id(path) {
+        if (!path) return this.path;
+        return this.path ? [this.path, path].join('.') : path;
+      }
 
-    /**
-     * Gets a content item by path (e.g. `section.item`).
-     * Will return both text and/or objects, depending on the contents of the item
-     *
-     * @param {String} path       Item path e.g. `section.item`
-     *
-     * @return {Mixed}
-     */
-    get(path) {
-      const result = this._get(this.id(path));
+      /**
+       * Gets a content item by path (e.g. `section.item`).
+       * Will return both text and/or objects, depending on the contents of the item
+       *
+       * @param {String} path       Item path e.g. `section.item`
+       *
+       * @return {Mixed}
+       */
+    }, {
+      key: "get",
+      value: function get(path) {
+        var result = this.wurd.store.get(this.id(path));
 
-      // If an item is missing, check that the section has been loaded
-      if (typeof result === 'undefined' && this.wurd.draft) {
-        const section = path.split('.')[0];
-        if (!this._get(section)) {
-          console.warn(`Tried to access unloaded section: ${section}`);
+        // If an item is missing, check that the section has been loaded
+        if (typeof result === 'undefined' && this.wurd.draft) {
+          var section = path.split('.')[0];
+          if (!this.wurd.store.get(section)) {
+            console.warn("Tried to access unloaded section: ".concat(section));
+          }
         }
+        return result;
       }
-      return result;
-    }
 
-    /**
-     * Gets text content of an item by path (e.g. `section.item`).
-     * If the item is not a string, e.g. you have passed the path of an object,
-     * an empty string will be returned, unless in draft mode in which case a warning will be returned.
-     *
-     * @param {String} path       Item path e.g. `section.item`
-     * @param {Object} [vars]     Variables to replace in the text
-     *
-     * @return {Mixed}
-     */
-    text(path, vars) {
-      let text = this.get(path);
-      if (typeof text === 'undefined') {
-        return this.wurd.draft ? `[${path}]` : '';
+      /**
+       * Gets text content of an item by path (e.g. `section.item`).
+       * If the item is not a string, e.g. you have passed the path of an object,
+       * an empty string will be returned, unless in draft mode in which case a warning will be returned.
+       *
+       * @param {String} path       Item path e.g. `section.item`
+       * @param {Object} [vars]     Variables to replace in the text
+       *
+       * @return {Mixed}
+       */
+    }, {
+      key: "text",
+      value: function text(path, vars) {
+        var text = this.get(path);
+        if (typeof text === 'undefined') {
+          return this.wurd.draft ? "[".concat(path, "]") : '';
+        }
+        if (typeof text !== 'string') {
+          console.warn("Tried to get object as string: ".concat(path));
+          return this.wurd.draft ? "[".concat(path, "]") : '';
+        }
+        if (vars) {
+          text = replaceVars(text, vars);
+        }
+        return text;
       }
-      if (typeof text !== 'string') {
-        console.warn(`Tried to get object as string: ${path}`);
-        return this.wurd.draft ? `[${path}]` : '';
-      }
-      if (vars) {
-        text = replaceVars(text, vars);
-      }
-      return text;
-    }
 
-    /**
-     * Gets HTML from Markdown content of an item by path (e.g. `section.item`).
-     * If the item is not a string, e.g. you have passed the path of an object,
-     * an empty string will be returned, unless in draft mode in which case a warning will be returned.
-     *
-     * @param {String} path       Item path e.g. `section.item`
-     * @param {Object} [vars]     Variables to replace in the text
-     * @param {Boolean} [opts.inline]
-     *
-     * @return {Mixed}
-     */
-    markdown(path, vars, opts) {
-      const {
-        parse,
-        parseInline
-      } = this.wurd.markdown;
-      const text = this.text(path, vars);
-      if (opts?.inline && parseInline) {
-        return parseInline(text);
+      /**
+       * Gets HTML from Markdown content of an item by path (e.g. `section.item`).
+       * If the item is not a string, e.g. you have passed the path of an object,
+       * an empty string will be returned, unless in draft mode in which case a warning will be returned.
+       *
+       * @param {String} path       Item path e.g. `section.item`
+       * @param {Object} [vars]     Variables to replace in the text
+       * @param {Boolean} [opts.inline]
+       *
+       * @return {Mixed}
+       */
+    }, {
+      key: "markdown",
+      value: function markdown(path, vars, opts) {
+        var _this$wurd$markdown = this.wurd.markdown,
+          parse = _this$wurd$markdown.parse,
+          parseInline = _this$wurd$markdown.parseInline;
+        var text = this.text(path, vars);
+        if (opts !== null && opts !== void 0 && opts.inline && parseInline) {
+          return parseInline(text);
+        }
+        if (parse) {
+          return parse(text);
+        }
+        return text;
       }
-      if (parse) {
-        return parse(text);
+
+      /**
+       * Iterates over a collection / list object with the given callback.
+       *
+       * @param {String} path
+       * @param {Function} fn     Callback function with signature ({Function} itemBlock, {Number} index)
+       */
+    }, {
+      key: "map",
+      value: function map(path, fn) {
+        var _this2 = this;
+        var listContent = this.get(path) || _defineProperty({}, Date.now(), {});
+        var index = 0;
+        var keys = Object.keys(listContent).sort();
+        return keys.map(function (key) {
+          var currentIndex = index;
+          index++;
+          var itemPath = [path, key].join('.');
+          var itemBlock = _this2.block(itemPath);
+          return fn.call(undefined, itemBlock, currentIndex);
+        });
       }
-      return text;
-    }
 
-    /**
-     * Iterates over a collection / list object with the given callback.
-     *
-     * @param {String} path
-     * @param {Function} fn     Callback function with signature ({Function} itemBlock, {Number} index)
-     */
-    map(path, fn) {
-      const listContent = this.get(path) || {
-        [Date.now()]: {}
-      };
-      let index = 0;
-      const keys = Object.keys(listContent).sort();
-      return keys.map(key => {
-        const currentIndex = index;
-        index++;
-        const itemPath = [path, key].join('.');
-        const itemBlock = this.block(itemPath);
-        return fn.call(undefined, itemBlock, currentIndex);
-      });
-    }
-
-    /**
-     * Creates a new Block scoped to the child content.
-     * Optionally runs a callback with the block as the argument
-     *
-     * @param {String} path
-     * @param {Function} [fn]     Optional callback that receives the child block object
-     *
-     * @return {Block}
-     */
-    block(path, fn) {
-      const blockPath = this.id(path);
-      const childBlock = new Block(this.wurd, blockPath);
-      if (typeof fn === 'function') {
-        return fn.call(undefined, childBlock);
+      /**
+       * Creates a new Block scoped to the child content.
+       * Optionally runs a callback with the block as the argument
+       *
+       * @param {String} path
+       * @param {Function} [fn]     Optional callback that receives the child block object
+       *
+       * @return {Block}
+       */
+    }, {
+      key: "block",
+      value: function block(path, fn) {
+        var blockPath = this.id(path);
+        var childBlock = new Block(this.wurd, blockPath);
+        if (typeof fn === 'function') {
+          return fn.call(undefined, childBlock);
+        }
+        return childBlock;
       }
-      return childBlock;
-    }
 
-    /**
-     * Returns an HTML string for an editable element.
-     *
-     * This is a shortcut for writing out the HTML tag
-     * with the wurd editor attributes and the text content.
-     *
-     * Use this or create a similar helper to avoid having to type out the item paths twice.
-     *
-     * @param {String} path
-     * @param {Object} [vars]               Optional variables to replace in the text
-     * @param {Object} [options]
-     * @param {Boolean} [options.markdown]  Parses text as markdown
-     * @param {String} [options.type]       HTML node type, defaults to 'span', or 'div' for markdown content
-     *
-     * @return {String}
-     */
-    el(path, vars, options = {}) {
-      const id = this.id(path);
-      const text = options.markdown ? this.markdown(path, vars) : this.text(path, vars);
-      const editor = vars || options.markdown ? 'data-wurd-md' : 'data-wurd';
-      if (this.wurd.draft) {
-        let type = options.type || 'span';
-        if (options.markdown) type = 'div';
-        return `<${type} ${editor}="${id}">${text}</${type}>`;
+      /**
+       * Returns an HTML string for an editable element.
+       *
+       * This is a shortcut for writing out the HTML tag
+       * with the wurd editor attributes and the text content.
+       *
+       * Use this or create a similar helper to avoid having to type out the item paths twice.
+       *
+       * @param {String} path
+       * @param {Object} [vars]               Optional variables to replace in the text
+       * @param {Object} [options]
+       * @param {Boolean} [options.markdown]  Parses text as markdown
+       * @param {String} [options.type]       HTML node type, defaults to 'span', or 'div' for markdown content
+       *
+       * @return {String}
+       */
+    }, {
+      key: "el",
+      value: function el(path, vars) {
+        var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+        var id = this.id(path);
+        var text = options.markdown ? this.markdown(path, vars) : this.text(path, vars);
+        var editor = vars || options.markdown ? 'data-wurd-md' : 'data-wurd';
+        if (this.wurd.draft) {
+          var type = options.type || 'span';
+          if (options.markdown) type = 'div';
+          return "<".concat(type, " ").concat(editor, "=\"").concat(id, "\">").concat(text, "</").concat(type, ">");
+        }
+        return text;
       }
-      return text;
-    }
 
-    /**
-     * Returns the block helpers, bound to the block instance.
-     * This is useful if using object destructuring for shortcuts,
-     * for example `const {text, el} = block.bound()`
-     *
-     * @return {Object}
-     */
-    /*
-    helpers(path) {
-      const block = path ? this.block(path) : this;
-       const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(block));
-       const boundMethods = methodNames.reduce((memo, name) => {
-        if (name === 'constructor') return memo;
-         memo[name] = block[name].bind(block);
-        return memo;
-      }, {});
-       return boundMethods;
-    }
-    */
-  }
-  class Wurd {
+      /**
+       * Returns the block helpers, bound to the block instance.
+       * This is useful if using object destructuring for shortcuts,
+       * for example `const {text, el} = block.bound()`
+       *
+       * @return {Object}
+       */
+      /*
+      helpers(path) {
+        const block = path ? this.block(path) : this;
+         const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(block));
+         const boundMethods = methodNames.reduce((memo, name) => {
+          if (name === 'constructor') return memo;
+           memo[name] = block[name].bind(block);
+          return memo;
+        }, {});
+         return boundMethods;
+      }
+      */
+    }]);
+  }();
+  var Wurd = /*#__PURE__*/function () {
     /**
      * @param {String} appName
      */
-    constructor(appName, options = {}) {
+    function Wurd(appName) {
+      var _this3 = this;
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      _classCallCheck(this, Wurd);
       this.widgetUrl = 'https://widget.wurd.io/widget.js';
       this.apiUrl = 'https://api.wurd.io';
       this.store = new Store();
       this.content = new Block(this, null);
 
       // Add block shortcut methods to the main Wurd instance
-      const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this.content));
-      methodNames.forEach(name => {
-        this[name] = this.content[name].bind(this.content);
+      var methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this.content));
+      methodNames.forEach(function (name) {
+        _this3[name] = _this3.content[name].bind(_this3.content);
       });
       this.connect(appName, options);
     }
@@ -353,253 +458,270 @@
      * @param {Object} [options.rawContent] Content to populate the store with
      * @param {Function} [options.onLoad] Callback that runs whenever load() completes. Signature: onLoad(content) => {}
      */
-    connect(appName, options = {}) {
-      this.app = appName;
-      this.draft = false;
-      this.editMode = false;
+    return _createClass(Wurd, [{
+      key: "connect",
+      value: function connect(appName) {
+        var _this4 = this;
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        this.app = appName;
+        this.draft = false;
+        this.editMode = false;
 
-      // Set allowed options
-      ['draft', 'lang', 'markdown', 'debug', 'onLoad'].forEach(name => {
-        const val = options[name];
-        if (typeof val !== 'undefined') this[name] = val;
-      });
+        // Set allowed options
+        ['draft', 'lang', 'markdown', 'debug', 'onLoad'].forEach(function (name) {
+          var val = options[name];
+          if (typeof val !== 'undefined') _this4[name] = val;
+        });
 
-      // Activate edit mode if required
-      switch (options.editMode) {
-        // Edit mode always on
-        case true:
-          this.startEditor();
-          break;
-
-        // Activate edit mode if the querystring contains an 'edit' parameter e.g. '?edit'
-        case 'querystring':
-          if (/[?&]edit(&|$)/.test(location.search)) {
+        // Activate edit mode if required
+        switch (options.editMode) {
+          // Edit mode always on
+          case true:
             this.startEditor();
-          }
-          break;
-      }
-      if (options.rawContent) {
-        this.store.save(options.rawContent, {
-          lang: options.lang
-        });
-      }
-      if (options.storageKey) this.store.storageKey = options.storageKey;
-      if (options.ttl) this.store.ttl = options.ttl;
-      if (options.blockHelpers) {
-        this.setBlockHelpers(options.blockHelpers);
-      }
-      return this;
-    }
+            break;
 
-    /**
-     * Loads sections of content so that items are ready to be accessed with #get(id)
-     *
-     * @param {String|Array<String>} sectionNames     Top-level sections to load e.g. `main,home`
-     */
-    load(sectionNames) {
-      const {
-        app,
-        store,
-        lang,
-        editMode,
-        debug,
-        onLoad,
-        content
-      } = this;
-      if (!app) {
-        return Promise.reject(new Error('Use wurd.connect(appName) before wurd.load()'));
-      }
-
-      // Normalise string sectionNames to array
-      const sections = typeof sectionNames === 'string' ? sectionNames.split(',') : sectionNames;
-
-      // When in editMode we skip the cache completely
-      if (editMode) {
-        return this._fetchSections(sections).then(result => {
-          store.save(result, {
-            lang
+          // Activate edit mode if the querystring contains an 'edit' parameter e.g. '?edit'
+          case 'querystring':
+            if (/[?&]edit(&|$)/.test(location.search)) {
+              this.startEditor();
+            }
+            break;
+        }
+        if (options.rawContent) {
+          this.store.save(options.rawContent, {
+            lang: options.lang
           });
-
-          // Clear the cache so changes are reflected immediately when out of editMode
-          store.clear();
-
-          // Pass main content Block to callbacks
-          if (onLoad) onLoad(content);
-          return content;
-        });
+        }
+        if (options.storageKey) this.store.storageKey = options.storageKey;
+        if (options.ttl) this.store.ttl = options.ttl;
+        if (options.blockHelpers) {
+          this.setBlockHelpers(options.blockHelpers);
+        }
+        return this;
       }
 
-      // Check for cached sections
-      const cachedContent = store.load(sections, {
-        lang
-      });
-      const uncachedSections = sections.filter(section => cachedContent[section] === undefined);
-      if (debug) console.info('Wurd: from cache:', sections.filter(section => cachedContent[section] !== undefined));
+      /**
+       * Loads sections of content so that items are ready to be accessed with #get(id)
+       *
+       * @param {String|Array<String>} sectionNames     Top-level sections to load e.g. `main,home`
+       */
+    }, {
+      key: "load",
+      value: function load(sectionNames) {
+        var app = this.app,
+          store = this.store,
+          lang = this.lang,
+          editMode = this.editMode,
+          debug = this.debug,
+          onLoad = this.onLoad,
+          content = this.content;
+        if (!app) {
+          return Promise.reject(new Error('Use wurd.connect(appName) before wurd.load()'));
+        }
 
-      // Return now if all content was in cache
-      if (uncachedSections.length === 0) {
-        // Pass main content Block to callbacks
-        if (onLoad) onLoad(content);
-        return Promise.resolve(content);
-      }
+        // Normalise string sectionNames to array
+        var sections = typeof sectionNames === 'string' ? sectionNames.split(',') : sectionNames;
 
-      // Otherwise fetch remaining sections
-      return this._fetchSections(uncachedSections).then(result => {
-        // Cache for next time
-        store.save(result, {
-          lang
+        // When in editMode we skip the cache completely
+        if (editMode) {
+          return this._fetchSections(sections).then(function (result) {
+            store.save(result, {
+              lang: lang
+            });
+
+            // Clear the cache so changes are reflected immediately when out of editMode
+            store.clear();
+
+            // Pass main content Block to callbacks
+            if (onLoad) onLoad(content);
+            return content;
+          });
+        }
+
+        // Check for cached sections
+        var cachedContent = store.load(sections, {
+          lang: lang
         });
+        var uncachedSections = cachedContent._expired ? sections : sections.filter(function (section) {
+          return cachedContent[section] === undefined;
+        });
+        if (debug) console.info('Wurd: from cache:', sections.filter(function (section) {
+          return cachedContent[section] !== undefined;
+        }));
 
-        // Pass main content Block to callbacks
+        // If missing sections, refetch in background
+        if (uncachedSections.length) {
+          this._fetchSections(uncachedSections).then(function (result) {
+            // Cache for next time
+            store.save(result, {
+              lang: lang
+            });
+
+            // Pass main content Block to callbacks
+            if (onLoad) onLoad(store.get());
+          });
+        }
+
+        // Return content in all case
         if (onLoad) onLoad(content);
         return content;
-      });
-    }
-    _fetchSections(sectionNames) {
-      const {
-        app,
-        debug
-      } = this;
+      }
+    }, {
+      key: "_fetchSections",
+      value: function _fetchSections(sectionNames) {
+        var _this5 = this;
+        var app = this.app,
+          debug = this.debug;
 
-      // Some sections not in cache; fetch them from server
-      if (debug) console.info('Wurd: from server:', sectionNames);
+        // Some sections not in cache; fetch them from server
+        if (debug) console.info('Wurd: from server:', sectionNames);
 
-      // Build request URL
-      const params = ['draft', 'lang'].reduce((memo, param) => {
-        if (this[param]) memo[param] = this[param];
-        return memo;
-      }, {});
-      const url = `${this.apiUrl}/apps/${app}/content/${sectionNames}?${encodeQueryString(params)}`;
-      return this._fetch(url).then(result => {
-        if (result.error) {
-          if (result.error.message) {
-            throw new Error(result.error.message);
-          } else {
-            throw new Error(`Error loading ${sectionNames}`);
+        // Build request URL
+        var params = ['draft', 'lang'].reduce(function (memo, param) {
+          if (_this5[param]) memo[param] = _this5[param];
+          return memo;
+        }, {});
+        var url = "".concat(this.apiUrl, "/apps/").concat(app, "/content/").concat(sectionNames, "?").concat(encodeQueryString(params));
+        return this._fetch(url).then(function (result) {
+          if (result.error) {
+            if (result.error.message) {
+              throw new Error(result.error.message);
+            } else {
+              throw new Error("Error loading ".concat(sectionNames));
+            }
           }
-        }
-        return result;
-      });
-    }
-    _fetch(url) {
-      return fetch(url).then(res => {
-        if (!res.ok) throw new Error(`Error loading ${url}: ${res.statusText}`);
-        return res.json();
-      });
-    }
-    startEditor() {
-      const {
-        app,
-        lang
-      } = this;
+          return result;
+        });
+      }
+    }, {
+      key: "_fetch",
+      value: function _fetch(url) {
+        return fetch(url).then(function (res) {
+          if (!res.ok) throw new Error("Error loading ".concat(url, ": ").concat(res.statusText));
+          return res.json();
+        });
+      }
+    }, {
+      key: "startEditor",
+      value: function startEditor() {
+        var app = this.app,
+          lang = this.lang;
 
-      // Draft mode is always on if in edit mode
-      this.editMode = true;
-      this.draft = true;
-      const script = document.createElement('script');
-      script.src = this.widgetUrl;
-      script.async = true;
-      script.setAttribute('data-app', app);
-      if (lang) {
-        script.setAttribute('data-lang', lang);
+        // Draft mode is always on if in edit mode
+        this.editMode = true;
+        this.draft = true;
+        var script = document.createElement('script');
+        script.src = this.widgetUrl;
+        script.async = true;
+        script.setAttribute('data-app', app);
+        if (lang) {
+          script.setAttribute('data-lang', lang);
+        }
+        var prevScript = document.body.querySelector("script[src=\"".concat(this.widgetUrl, "\"]"));
+        if (prevScript) {
+          document.body.removeChild(prevScript);
+        }
+        document.body.appendChild(script);
       }
-      const prevScript = document.body.querySelector(`script[src="${this.widgetUrl}"]`);
-      if (prevScript) {
-        document.body.removeChild(prevScript);
+    }, {
+      key: "setBlockHelpers",
+      value: function setBlockHelpers(helpers) {
+        Object.assign(Block.prototype, helpers);
       }
-      document.body.appendChild(script);
-    }
-    setBlockHelpers(helpers) {
-      Object.assign(Block.prototype, helpers);
-    }
-  }
-  const instance = new Wurd();
+    }]);
+  }();
+  var instance = new Wurd();
   instance.Wurd = Wurd;
 
-  function WurdText({
-    block,
-    id,
-    sid,
-    type = 'span',
-    component: Component = type,
-    vars,
-    ...rest
-  }) {
+  var _excluded$4 = ["block", "id", "sid", "type", "component", "vars"];
+  function WurdText(_ref) {
+    var block = _ref.block,
+      id = _ref.id,
+      sid = _ref.sid,
+      _ref$type = _ref.type,
+      type = _ref$type === void 0 ? 'span' : _ref$type,
+      _ref$component = _ref.component,
+      Component = _ref$component === void 0 ? type : _ref$component,
+      vars = _ref.vars,
+      rest = _objectWithoutProperties(_ref, _excluded$4);
     block = block || instance.content;
-    const text = block.text(id, vars);
-    const elProps = {
-      ...rest
-    };
+    var text = block.text(id, vars);
+    var elProps = _objectSpread2({}, rest);
     if (instance.editMode) {
-      const editorType = vars ? 'data-wurd-md' : 'data-wurd';
+      var editorType = vars ? 'data-wurd-md' : 'data-wurd';
       elProps[editorType] = block.id(sid || id);
     }
     return /*#__PURE__*/React__default["default"].createElement(Component, elProps, text);
   }
 
-  function WurdMarkdown({
-    block,
-    id,
-    sid,
-    type = 'div',
-    component: Component = type,
-    vars,
-    inline,
-    ...rest
-  }) {
+  var _excluded$3 = ["block", "id", "sid", "type", "component", "vars", "inline"];
+  function WurdMarkdown(_ref) {
+    var block = _ref.block,
+      id = _ref.id,
+      sid = _ref.sid,
+      _ref$type = _ref.type,
+      type = _ref$type === void 0 ? 'div' : _ref$type,
+      _ref$component = _ref.component,
+      Component = _ref$component === void 0 ? type : _ref$component,
+      vars = _ref.vars,
+      inline = _ref.inline,
+      rest = _objectWithoutProperties(_ref, _excluded$3);
     block = block || instance.content;
-    const text = block.markdown(id, vars, {
-      inline
+    var text = block.markdown(id, vars, {
+      inline: inline
     });
-    const elProps = {
-      ...rest,
+    var elProps = _objectSpread2(_objectSpread2({}, rest), {}, {
       dangerouslySetInnerHTML: {
         __html: text
       }
-    };
+    });
     if (instance.editMode) {
       elProps['data-wurd-md'] = block.id(sid || id);
     }
     return /*#__PURE__*/React__default["default"].createElement(Component, elProps);
   }
 
-  function WurdImage({
-    block,
-    id,
-    sid,
-    ...rest
-  }) {
+  var _excluded$2 = ["block", "id", "sid"];
+  function WurdImage(_ref) {
+    var block = _ref.block,
+      id = _ref.id,
+      sid = _ref.sid,
+      rest = _objectWithoutProperties(_ref, _excluded$2);
     block = block || instance.content;
-    const url = block.text(id);
-    const elProps = {
-      ...rest,
+    var url = block.text(id);
+    var elProps = _objectSpread2(_objectSpread2({}, rest), {}, {
       src: url
-    };
+    });
     if (instance.editMode) {
       elProps['data-wurd-img'] = block.id(sid || id);
     }
     return /*#__PURE__*/React__default["default"].createElement('img', elProps);
   }
 
-  function WurdList({
-    block,
-    id,
-    children,
-    type = 'ul',
-    component: Component = type,
-    keys = 'title',
-    ...rest
-  }) {
+  var _excluded$1 = ["block", "id", "children", "type", "component", "keys"];
+  function WurdList(_ref) {
+    var block = _ref.block,
+      id = _ref.id,
+      children = _ref.children,
+      _ref$type = _ref.type,
+      type = _ref$type === void 0 ? 'ul' : _ref$type,
+      _ref$component = _ref.component,
+      Component = _ref$component === void 0 ? type : _ref$component,
+      _ref$keys = _ref.keys,
+      keys = _ref$keys === void 0 ? 'title' : _ref$keys,
+      rest = _objectWithoutProperties(_ref, _excluded$1);
     block = block || instance.content;
-    const elProps = {
-      ...rest
-    };
+    var elProps = _objectSpread2({}, rest);
     if (instance.editMode) {
       elProps['data-wurd-list'] = block.id(id);
       elProps['data-wurd-list-props'] = keys;
     }
-    return /*#__PURE__*/React__default["default"].createElement(Component, elProps, block.map(id, (item, itemId) => children(item, itemId)));
+    return /*#__PURE__*/React__default["default"].createElement(Component, elProps, block.map(id, function (item, itemId) {
+      return children(item, itemId);
+    }));
   }
+
+  var _excluded = ["block", "id", "sid", "keys", "type", "component", "children"];
 
   /**
    * WurdObject is used to wrap multiple wurd items in one edit dialog
@@ -608,20 +730,19 @@
    * @param {string} [props.id]
    * @param {string|array} [props.keys] list of wurds ids
    */
-  function WurdObject({
-    block,
-    id,
-    sid,
-    keys,
-    type = 'span',
-    component: Component = type,
-    children,
-    ...rest
-  }) {
+  function WurdObject(_ref) {
+    var block = _ref.block,
+      id = _ref.id,
+      sid = _ref.sid,
+      keys = _ref.keys,
+      _ref$type = _ref.type,
+      type = _ref$type === void 0 ? 'span' : _ref$type,
+      _ref$component = _ref.component,
+      Component = _ref$component === void 0 ? type : _ref$component,
+      children = _ref.children,
+      rest = _objectWithoutProperties(_ref, _excluded);
     block = block || instance.content;
-    const elProps = {
-      ...rest
-    };
+    var elProps = _objectSpread2({}, rest);
     if (instance.editMode) {
       // Normalise keys to string in form 'key1,key2'
 
@@ -632,35 +753,30 @@
   }
 
   instance.setBlockHelpers({
-    Text: function (props) {
-      return /*#__PURE__*/React__default["default"].createElement(WurdText, {
-        block: this,
-        ...props
-      });
+    Text: function Text(props) {
+      return /*#__PURE__*/React__default["default"].createElement(WurdText, _objectSpread2({
+        block: this
+      }, props));
     },
-    Markdown: function (props) {
-      return /*#__PURE__*/React__default["default"].createElement(WurdMarkdown, {
-        block: this,
-        ...props
-      });
+    Markdown: function Markdown(props) {
+      return /*#__PURE__*/React__default["default"].createElement(WurdMarkdown, _objectSpread2({
+        block: this
+      }, props));
     },
-    Image: function (props) {
-      return /*#__PURE__*/React__default["default"].createElement(WurdImage, {
-        block: this,
-        ...props
-      });
+    Image: function Image(props) {
+      return /*#__PURE__*/React__default["default"].createElement(WurdImage, _objectSpread2({
+        block: this
+      }, props));
     },
-    List: function (props) {
-      return /*#__PURE__*/React__default["default"].createElement(WurdList, {
-        block: this,
-        ...props
-      });
+    List: function List(props) {
+      return /*#__PURE__*/React__default["default"].createElement(WurdList, _objectSpread2({
+        block: this
+      }, props));
     },
-    Object: function (props) {
-      return /*#__PURE__*/React__default["default"].createElement(WurdObject, {
-        block: this,
-        ...props
-      });
+    Object: function Object(props) {
+      return /*#__PURE__*/React__default["default"].createElement(WurdObject, _objectSpread2({
+        block: this
+      }, props));
     }
   });
 
