@@ -174,7 +174,10 @@
 
           // Check if it has expired
           if (metaData.savedAt + ttl < Date.now()) {
-            rawContent._expired = true;
+            Object.defineProperty(cachedContent, '_expired', {
+              enumerable: false,
+              value: true
+            });
           }
 
           // Remove metadata
